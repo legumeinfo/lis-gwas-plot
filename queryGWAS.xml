@@ -1,0 +1,13 @@
+<query name=""
+       model="genomic"
+       view="GWAS.primaryIdentifier 
+             GWAS.results.pValue 
+             GWAS.results.trait.name GWAS.results.trait.description 
+             GWAS.results.markers.name 
+             GWAS.results.markers.genotypingPlatform
+             GWAS.results.markers.chromosome.name 
+             GWAS.results.markers.chromosomeLocation.start GWAS.results.markers.chromosomeLocation.end GWAS.results.markers.chromosomeLocation.strand"
+       longDescription=""
+       sortOrder="GWAS.results.markers.chromosome.name asc">
+  <constraint path="GWAS.primaryIdentifier" op="=" value="mixed.gwas.DiVittori_Bitocchi_2021"/>
+</query>
