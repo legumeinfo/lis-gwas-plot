@@ -1,5 +1,5 @@
 /**
- * Query the expression for a GWAS given by gwasId.
+ * Query the results from a GWAS given by gwasId.
  */
 export default function queryData(gwasId, serviceUrl, imjsClient = imjs) {
     return new Promise((resolve, reject) => {
@@ -18,43 +18,37 @@ export default function queryData(gwasId, serviceUrl, imjsClient = imjs) {
     });
 }
 
-// imjs path query to grab a GWAS
-// view="GWAS.primaryIdentifier
-//       GWAS.results.pValue
-//       GWAS.results.trait.name GWAS.results.trait.description 
-//       GWAS.results.markers.name GWAS.results.markers.genotypingPlatform
-//       GWAS.results.markers.chromosome.name
-//       GWAS.results.markers.chromosomeLocation.start GWAS.results.markers.chromosomeLocation.end GWAS.results.markers.chromosomeLocation.strand"
-// sortOrder="GWAS.results.markers.chromosome.name GWAS.results.markers.chromosomeLocation.start asc"
+// view="GWASResult.pValue
+//       GWASResult.gwas.primaryIdentifier GWASResult.gwas.synopsis
+//       GWASResult.markers.name GWASResult.markers.chromosome.name GWASResult.markers.chromosomeLocation.start GWASResult.markers.chromosomeLocation.end" 
 const pathQuery = ({ gwasId }) => ({
-    from: 'GWAS',
+    from: 'GWASResult',
     select: [
-	'primaryIdentifier',
-        'results.pValue',
-        'results.trait.name',
-        'results.trait.description',
-        'results.markers.name',
-        'results.markers.genotypingPlatform',
-        'results.markers.chromosome.name',
-        'results.markers.chromosomeLocation.start',
-        'results.markers.chromosomeLocation.end',
-        'results.markers.chromosomeLocation.strand'
+        'pValue',
+        'gwas.primaryIdentifier',
+        'markers.name',
+        'markers.chromosome.name',
+        'markers.chromosome.primaryIdentifier',
+        'markers.chromosome.assemblyVersion',
+        'markers.chromosome.length',
+        'markers.chromosomeLocation.start',
+        'markers.chromosomeLocation.end'
     ],
     orderBy: [
         {
-            path: 'results.markers.chromosome.name',
+            path: 'markers.chromosome.primaryIdentifier',
             direction: 'ASC'
         },
         {
-            path: 'results.markers.chromosomeLocation.start',
+            path: 'markers.chromosomeLocation.start',
             direction: 'ASC'
         }
     ],
     where: [
 	{
-	    path: 'id',
+	    path: 'gwas.id',
 	    op: '=',
-	    values: gwasId
+	    value: gwasId
 	}
     ]
 });

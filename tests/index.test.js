@@ -1,3 +1,6 @@
+const React = require('react');
+const ReactDOM = require('react-dom');
+const RootContainer = require('../src/RootContainer').default;
 const main = require('../src').main;
 
 // Example
@@ -8,23 +11,18 @@ describe('main', () => {
 			main('', 0, null, undefined, []);
 		}).toThrowError('Call main with correct signature');
 	});
-	test('should render loading immediately when intialised', () => {
-		const mockData = {
-			el: document.createElement('div'),
-			service: { root: 'https://mines.legumeinfo.org/soymine/' },
-			state: { testing: true },
-			entity: { value: '875000005' },
-			config: {}
-		};
-		expect(() => {
-			main(
-				mockData.el,
-				mockData.service,
-				mockData.entity,
-				mockData.state,
-				mockData.config
-			);
-			expect(mockData.el.innerHTML).toContain('div');
-		});
+
+	test('should render something (atleast a div) into the `elem` passed', () => {
+		const el = document.createElement('div');
+		ReactDOM.render(
+			<RootContainer
+				entity={{}}
+				serviceUrl="https://www.flymine.org/flymine"
+				testing={true}
+			/>,
+			el
+		);
+		expect(el.innerHTML).toContain('div');
+		expect(el.innerHTML).not.toEqual('');
 	});
 });

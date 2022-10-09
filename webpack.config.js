@@ -15,7 +15,6 @@ module.exports = {
 	},
 	module: {
     rules: [
-      
       {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
@@ -24,7 +23,10 @@ module.exports = {
         }
       }
     ]
-  },
+	},
+	plugins: [
+		new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/)
+	],
 	externals: {
 		react: 'window.React',
 		'react-dom': 'window.ReactDOM'

@@ -26,8 +26,5 @@
     "prettier/prettier": "error",
     "comma-dangle": ["error", "never"],
 		"react/prop-types": 0
-  },
-  "globals": {
-    "imjs": true
   }
 }

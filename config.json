@@ -1,20 +1,13 @@
 {
-  "accepts": ["id", "ids"],
+  "accepts": ["id"],
   "classes": ["GWAS"],
-  "columnMapping": {
-    "Gene": {
-      "id": "primaryIdentifier"
-    },
-    "Protein": {
-      "id": "primaryIdentifier"
-    }
-  },
+  "depends": ["GWASResult"],
   "files" : {
     "css" : "dist/style.css",
     "js" : "dist/bundle.js"
   },
   "toolName" : {
-    "human" :"LIS bluegenes GWAS plot",
+    "human" :"LIS GWAS Plot",
     "cljs" :"lisGWASPlot"    
   },
   "version": 2
