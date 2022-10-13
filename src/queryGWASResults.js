@@ -1,5 +1,5 @@
 /**
- * Query the results from a GWAS given by gwasId.
+ * Query the results from a GWAS.
  */
 export default function queryData(gwasId, serviceUrl, imjsClient = imjs) {
     return new Promise((resolve, reject) => {
@@ -34,7 +34,7 @@ const pathQuery = ({ gwasId }) => ({
         'markers.chromosomeLocation.start',
         'markers.chromosomeLocation.end'
     ],
-    orderBy: [
+    sortOrder: [
         {
             path: 'markers.chromosome.primaryIdentifier',
             direction: 'ASC'
