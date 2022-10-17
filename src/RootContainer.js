@@ -146,7 +146,7 @@ export default function RootContainer({ serviceUrl, entity, config }) {
     // }
     
     return (
-        <div className="rootContainer">
+        <div>
             {genomes && (
                 <div className="selector">
                     <select name="genomeIndex" onChange={handleChange}>
@@ -158,7 +158,9 @@ export default function RootContainer({ serviceUrl, entity, config }) {
                 </div>
             )}
             {conf && plotData && (
-                <CanvasXpressReact target={"canvas"} data={plotData} config={conf} width={1000} height={500} />
+                <div className="rootContainer">
+                    <CanvasXpressReact target={"canvas"} data={plotData} config={conf} height={500} width={1150} />
+                </div>
             )}
             {!genomes && !plotData && (
                 <Loader />
