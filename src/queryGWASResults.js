@@ -1,12 +1,21 @@
 /**
- * Query the results from a GWAS.
+ * Query the results from a GWAS for a given genome assembly.
+ *
+ * genome: {
+ *   prefix: prefix,
+ *   abbreviation: marker.organism.abbreviation,
+ *   strain: marker.strain.identifier,
+ *   assemblyVersion: marker.assemblyVersion
+ * }
+ *
  */
-export default function queryData(gwasId, serviceUrl, imjsClient = imjs) {
+export default function queryData(gwasId, genome, serviceUrl, imjsClient = imjs) {
     return new Promise((resolve, reject) => {
+        const query = pathQuery({ gwasId, genome });
 	// eslint-disable-next-line
 	const service = new imjsClient.Service({ root: serviceUrl });
 	service
-	    .records(pathQuery({ gwasId }))
+	    .records(query)
 	    .then(data => {
 		if (data && data.length) {
                     resolve(data);
@@ -21,22 +30,18 @@ export default function queryData(gwasId, serviceUrl, imjsClient = imjs) {
 // view="GWASResult.pValue
 //       GWASResult.gwas.primaryIdentifier GWASResult.gwas.synopsis
 //       GWASResult.markers.name GWASResult.markers.chromosome.name GWASResult.markers.chromosomeLocation.start GWASResult.markers.chromosomeLocation.end" 
-const pathQuery = ({ gwasId }) => ({
+const pathQuery = ({ gwasId, genome }) => ({
     from: 'GWASResult',
     select: [
         'pValue',
-        'gwas.primaryIdentifier',
+        'trait.name',
         'markers.name',
         'markers.chromosome.name',
-        'markers.chromosome.primaryIdentifier',
-        'markers.chromosome.assemblyVersion',
-        'markers.chromosome.length',
-        'markers.chromosomeLocation.start',
-        'markers.chromosomeLocation.end'
+        'markers.chromosomeLocation.start'
     ],
     sortOrder: [
         {
-            path: 'markers.chromosome.primaryIdentifier',
+            path: 'markers.chromosome.name',
             direction: 'ASC'
         },
         {
@@ -49,6 +54,21 @@ const pathQuery = ({ gwasId }) => ({
 	    path: 'gwas.id',
 	    op: '=',
 	    value: gwasId
-	}
+	},
+        {
+            path: 'markers.organism.abbreviation',
+            op: '=',
+            value: genome.abbreviation
+        },
+        {
+            path: 'markers.strain.identifier',
+            op: '=',
+            value: genome.strain
+        },
+        {
+            path: 'markers.assemblyVersion',
+            op: '=',
+            value: genome.assemblyVersion
+        }
     ]
 });
