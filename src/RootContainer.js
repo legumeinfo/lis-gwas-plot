@@ -3,45 +3,39 @@ import { useState, useEffect } from 'react';
 import Loader from './common/loader';
 import CanvasXpressReact from 'canvasxpress-react';
 
-import queryGWASResults from "./queryGWASResults.js";
-import queryGenomes from "./queryGenomes.js";
+import queryGWAS from "./queryGWAS.js";
 import queryChromosomes from "./queryChromosomes.js";
-import getChartData from "./getChartData.js";
 
 export default function RootContainer({ serviceUrl, entity, config }) {
     const gwasId = entity.value;
     const [error, setError] = useState(null);
-    const [genomes, setGenomes] = useState(null);
+    const [prefixes, setPrefixes] = useState(null);
+    const [gwasResponse, setGwasResponse] = useState(null);
     const [plotData, setPlotData] = useState(null);
+    const [markerIdMap, setMarkerIdMap] = useState(null);
 
     // TIP: useEffect with empty array dependency only runs once!
     useEffect(() => {
-        // genomes via markers
-        queryGenomes(gwasId, serviceUrl)
+        // query GWAS results including markers mapped to multiple assemblies: extract distinct genome assemblies.
+        queryGWAS(gwasId, serviceUrl)
             .then(response => {
-                const genomes = [];
                 const prefixes = [];
-                response.forEach(item => {
-                    item.markers.forEach(marker => {
+                response.forEach(result => {
+                    result.markers.forEach(marker => {
                         const prefix = marker.organism.abbreviation + "." + marker.strain.identifier + "." + marker.assemblyVersion;
                         if (!prefixes.includes(prefix)) {
                             prefixes.push(prefix);
-                            genomes.push({
-                                prefix: prefix,
-                                abbreviation: marker.organism.abbreviation,
-                                strain: marker.strain.identifier,
-                                assemblyVersion: marker.assemblyVersion
-                            });
                         }
-                    })
-                })
-                setGenomes(genomes);
+                    });
+                });
+                setGwasResponse(response);
+                setPrefixes(prefixes);
             })
             .catch(() => {
-                setError("Genome data not found via markers for id="+gwasId);
+                setError("GWAS data not found for id="+gwasId);
             });
     }, []);
-
+    
     // static canvasXpress config
     const conf = {
         "decorations": {
@@ -54,7 +48,6 @@ export default function RootContainer({ serviceUrl, entity, config }) {
         "manhattanMarkerLogPValue": "-log10(p)",
         "manhattanMarkerPosition": "Pos",
         "scatterType": "manhattan",
-        "subtitle": "Slide window with mouse; change scale with mouse wheel over axis; resize plot by dragging edges; select region to zoom in; click marker to see its page.",
         "titleScaleFontFactor": 0.3,
         "subtitleScaleFontFactor": 0.2,
         "axisTitleScaleFontFactor": 2.0,
@@ -71,37 +64,38 @@ export default function RootContainer({ serviceUrl, entity, config }) {
         "legendPositionAuto": false,
         "legendPosition": "right",
     }
-    
+
     // on selector change set the genome and get its data
     function handleChange(event) {
         var i = event.target.value;
         if (i < 0) {
             setPlotData(null);
         } else {
-            // chromosome lengths
-            queryChromosomes(genomes[i], serviceUrl)
-                .then(chromosomes => {
-                    var chromosomeLengths = [];
+            conf.title = prefixes[i];
+            conf.chromosomeLengths = []; 
+            // get all chromosome lengths
+            queryChromosomes(prefixes[i], serviceUrl)
+                .then(chromosomes => { 
                     chromosomes.map((chromosome) => {
-                        chromosomeLengths.push(chromosome.length);
+                        conf.chromosomeLengths.push(chromosome.length);
                     });
-                    conf.chromosomeLengths = chromosomeLengths;
-                    conf.title = genomes[i];
                 })
                 .catch(() => {
                     setError("Error getting chromosomes.");
                 });
-            // GWASResults (markers on the given chromosomes)
+            // GWAS results for the chosen genome prefix
             const vars = [];
             const data = [];
             const traits = [];
-            queryGWASResults(gwasId, genomes[i], serviceUrl)
-                .then(response => {
-                    response.forEach(result => {
+            const markerIdMap = new Map();
+            gwasResponse.forEach(result => {
+                result.markers.forEach(marker => {
+                    const prefix = marker.organism.abbreviation + "." + marker.strain.identifier + "." + marker.assemblyVersion;
+                    if (prefix == prefixes[i]) {
                         // chromosomes have to be numbers for plot
-                        const len = result.markers[0].chromosome.name.length;
-                        const lastTwo = result.markers[0].chromosome.name.substring(len-2,len);
-                        const lastOne = result.markers[0].chromosome.name.substring(len-1,len);
+                        const len = marker.chromosome.name.length;
+                        const lastTwo = marker.chromosome.name.substring(len-2,len);
+                        const lastOne = marker.chromosome.name.substring(len-1,len);
                         var num = parseInt(lastTwo);
                         if (isNaN(num)) {
                             num = parseInt(lastOne);
@@ -109,28 +103,33 @@ export default function RootContainer({ serviceUrl, entity, config }) {
                         if (isNaN(num)) {
                             num = 0;
                         }
+                        // use middle between marker start and end
+                        const position = (marker.chromosomeLocation.start + marker.chromosomeLocation.end)/2;
+                        // plot -log10(p)
                         const mlog10p = -Math.log10(result.pValue);
-                        const datoid = [num, result.markers[0].chromosomeLocation.start, mlog10p];
-                        vars.push(result.markers[0].name);
+                        // canvasXpress
+                        const datoid = [num, position, mlog10p];
+                        vars.push(marker.primaryIdentifier);
                         data.push(datoid);
                         traits.push(result.trait.name);
-                    });
-                    // canvasXpress plot data
-                    const plotData = {
-                        z: {
-                            "Trait": traits
-                        },
-                        y: {
-                            "smps": ["Chr","Pos","-log10(p)"],
-                            "vars": vars,
-                            "data": data
-                        }
+                        // keep track of marker IDs for linkout
+                        markerIdMap.set(marker.primaryIdentifier, marker.objectId);
                     }
-                    setPlotData(plotData);
-                })                    
-                .catch(() => {
-                    setError("GWASResults not found for GWAS id="+gwasId);
                 });
+                setMarkerIdMap(markerIdMap);
+                // canvasXpress plot data
+                const plotData = {
+                    z: {
+                        "Trait": traits
+                    },
+                    y: {
+                        "smps": ["Chr","Pos","-log10(p)"],
+                        "vars": vars,
+                        "data": data
+                    }
+                }
+                setPlotData(plotData);
+            });
         }
     }
 
@@ -138,31 +137,36 @@ export default function RootContainer({ serviceUrl, entity, config }) {
             <div className="rootContainer error">{ error }</div>
     );
 
-    // add events={evts} 
-    // var evts = {
-    //     "click": function(o, e, t) {
-    //         var markerName = o.y.vars[0];
-    //     }
-    // }
+    // marker click opens a new GeneticMarker page
+    // window.location.href: http://domain.org/beanmine/report/GWAS/29000003
+    // marker page:          http://domain.org/beanmine/report/GeneticMarker/75000002
+    var evts = {
+        "click": function(o, e, t) {
+            var markerIdentifier = o.y.vars[0];
+            const uriParts = window.location.href.split("GWAS");
+            window.open(uriParts[0]+"GeneticMarker/"+markerIdMap.get(markerIdentifier));
+        }
+    }
     
     return (
         <div>
-            {genomes && (
+            {prefixes && (
                 <div className="selector">
                     <select name="genomeIndex" onChange={handleChange}>
                         <option key={-1} value={-1}>--- SELECT GENOME FOR MARKERS ---</option>
-                        {genomes.map((genome,i) => (
-                            <option key={i} value={i}>{genome.prefix}</option>
+                        {prefixes.map((prefix,i) => (
+                            <option key={i} value={i}>{prefix}</option>
                         ))}
                     </select>
                 </div>
             )}
             {conf && plotData && (
                 <div className="rootContainer">
-                    <CanvasXpressReact target={"canvas"} data={plotData} config={conf} height={500} width={1150} />
+                    <i>Slide window with mouse; change scale with mouse wheel over axis; resize plot by dragging edges; select region to zoom in; click marker to see its page.</i>
+                    <CanvasXpressReact target={"canvas"} data={plotData} config={conf} height={500} width={1150} events={evts} />
                 </div>
             )}
-            {!genomes && !plotData && (
+            {!prefixes && !plotData && (
                 <Loader />
             )}
         </div>

@@ -21,23 +21,31 @@ export default function queryGenomes(gwasId, serviceUrl, imjsClient = imjs) {
 // GWASResult.markers.organism.abbreviation
 // GWASResult.markers.strain.identifier
 // GWASResult.markers.assemblyVersion
-// path="GWASResult.gwas.primaryIdentifier" op="=" value="mixed.gwas.Escobar_Oladzad_2022"/>
+// path="GWASResult.gwas.primaryIdentifier" op="=" value="mixed.gwas.Escobar_Oladzad_2022"
 const pathQuery = ({ gwasId }) => ({
-    from: 'GWASResult',
+    from: 'GWAS',
     select: [
-        'markers.organism.abbreviation',
-        'markers.strain.identifier',
-        'markers.assemblyVersion'
+        'results.markers.organism.abbreviation',
+        'results.markers.strain.identifier',
+        'results.markers.assemblyVersion'
     ],
     sortOrder: [
         {
-            path: 'markers.assemblyVersion',
+            path: 'results.markers.organism.abbreviation',
+            direction: 'ASC'
+        },
+        {
+            path: 'results.markers.strain.identifier',
+            direction: 'ASC'
+        },
+        {
+            path: 'results.markers.assemblyVersion',
             direction: 'ASC'
         }
     ],
     where: [
 	{
-	    path: 'gwas.id',
+	    path: 'id',
 	    op: '=',
 	    value: gwasId
 	}

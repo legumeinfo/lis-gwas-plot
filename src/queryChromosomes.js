@@ -1,17 +1,17 @@
 /**
- * Query all chromosomes in the given genome assembly.
+ * Query all chromosomes in the given genome assembly to get lengths.
  */
-export default function queryChromosomes(genome, serviceUrl, imjsClient = imjs) {
+export default function queryChromosomes(prefix, serviceUrl, imjsClient = imjs) {
     return new Promise((resolve, reject) => {
 	// eslint-disable-next-line
 	const service = new imjsClient.Service({ root: serviceUrl });
 	service
-	    .records(pathQuery({ genome }))
+	    .records(pathQuery({ prefix }))
 	    .then(data => {
 		if (data && data.length) {
                     resolve(data);
 		} else {
-                    reject('Chromosomes not found for genome:'+JSON.stringify(genome));
+                    reject('Chromosomes not found for prefix:'+prefix);
                 }
 	    })
 	    .catch(reject);
@@ -23,11 +23,11 @@ export default function queryChromosomes(genome, serviceUrl, imjsClient = imjs) 
 // Chromosome.name
 // sortOrder="Chromosome.primaryIdentifier asc"
 // path="Chromosome.primaryIdentifier" op="CONTAINS" value="phavu.G19833.gnm2"
-const pathQuery = ({ genome }) => ({
+const pathQuery = ({ prefix }) => ({
     from: 'Chromosome',
     select: [
-        'name',
         'primaryIdentifier',
+        'name',
         'length'
     ],
     orderBy: [
@@ -38,19 +38,9 @@ const pathQuery = ({ genome }) => ({
     ],
     where: [
         {
-            path: 'organism.abbreviation',
-            op: '=',
-            value: genome.abbreviation
-        },
-        {
-            path: 'strain.identifier',
-            op: '=',
-            value: genome.strain
-        },
-        {
-            path: 'assemblyVersion',
-            op: '=',
-            value: genome.assemblyVersion
-        },
+            path: 'primaryIdentifier',
+            op: 'CONTAINS',
+            value: prefix
+        }
     ]
 });
