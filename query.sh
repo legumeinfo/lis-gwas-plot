@@ -5,6 +5,6 @@ FORMAT=$2
 
 QUERY=`cat $XML`
 
-curl --data-urlencode query="$QUERY" -d format=$FORMAT https://lis.ncgr.org/cicermine/service/query/results
+curl --data-urlencode query="$QUERY" -d format=$FORMAT https://mines.legumeinfo.org/minimine/service/query/results
 
 echo ""

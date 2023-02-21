@@ -1,0 +1,6 @@
+<query name=""
+       model="genomic"
+	view="GWAS.primaryIdentifier GWAS.synopsis"
+       longDescription="" 
+	sortOrder="GWAS.primaryIdentifier asc">
+</query>
